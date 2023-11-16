@@ -4,9 +4,15 @@
     "$className": "DataModel",
 
     "ReplicatedStorage": {
+      "Modules": {
+        "$path": "src/Modules"
+      }
     },
 
     "ServerScriptService": {
+      "Test_Scripts": {
+        "$path": "src/Test_Scripts"
+      }
     },
 
     "StarterPlayer": {
