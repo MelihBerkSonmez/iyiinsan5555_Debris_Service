@@ -22,6 +22,7 @@
 
 --Services
 local TweenService = game:GetService("TweenService")
+local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 --Definations
 local Debris_Service = {}
@@ -30,10 +31,11 @@ Debris_Service.Items = {}
 Debris_Service.Items_Lifetimes = {}
 
 local Item_Count = 0
+local Raycast_Visualizer = require(ReplicatedStorage:WaitForChild("Modules"):WaitForChild("iyiinsan5555's_RaycastVisualizer"))
 
 --Settings
 Debris_Service.Settings = {
-    FadeIn = {
+    Fade_In = {
         TweenInfo = TweenInfo.new(1, Enum.EasingStyle.Linear, Enum.EasingDirection.In, 0, false, 0) -- The tween info that will edit fade in debris type (Fade_In)
     },
 
@@ -56,10 +58,15 @@ Debris_Service.Settings = {
         Min_Size_Item_Z = 0.5,
     },
 
+    Rotated = {
+        TweenInfo = TweenInfo.new(1, Enum.EasingStyle.Back, Enum.EasingDirection.InOut, 0, false, 0),
+        Defualt_Y_Axis_Drop = 10
+    },
+
     Defualt_Lifetime = 10, -- The default number of seconds before an item is removed
     Min_Lifetime = 0.05, -- The minimum number of seconds before an item is removed
     Max_Items = 10000, -- The maximum number of items that can be added to the module
-    FastMode = false, -- I highly don't suggest opening this. It could cause bugs. And weird movements but it's still a choice. It works faster for models if you open it.
+    Fast_Mode  = false, -- I highly don't suggest opening this. It could cause bugs. And weird movements but it's still a choice. It works faster for models if you open it.
     
     
 }
@@ -126,7 +133,7 @@ function Debris_Service:Add_Item(Item :Instance, Lifetime :number, Debris_Type :
             local Table = Create_Sorted_Table(Item)
 
             for _, BasePart in pairs(Table.BaseParts) do
-                if not Debris_Service.Settings.FastMode then
+                if not Debris_Service.Settings.Fast_Mode  then
                     task.wait()
                 end
                 task.delay(Lifetime,function()
@@ -177,7 +184,7 @@ function Debris_Service:Get_Item_Count()
     return Item_Count
 end
 
-function Debris_Service:Get_Item_Lifetime(Item)
+function Debris_Service:Get_Item_Lifetime(Item :Instance)
 
     assert(typeof(Item) == "Instance", "Invalid argument #1 (Instance expected)")
 
@@ -205,7 +212,7 @@ end
 
 function Debris_Service:Fade_In(Item :Instance)
 
-    local CurrentTweenInfo = Debris_Service.Settings.FadeIn.TweenInfo
+    local CurrentTweenInfo = Debris_Service.Settings.Fade_In.TweenInfo
 
     if Item:IsA("BasePart") then
 
@@ -294,12 +301,12 @@ function Debris_Service:Patlamali(Item :Instance)
     local Smaller_Size = Vector3.new(Item.Size.X / 3, Item.Size.Y / 3, Item.Size.Z / 3)
     local Patlamali_Size = Vector3.new(Item.Size.X * 3, Item.Size.Y * 3, Item.Size.Z * 3)
 
-    local Smaller_Tween = TweenService:Create(Item, Debris_Service.Settings.Patlamali.TweenInfo, {Size = Smaller_Size, Color = Color3.fromRGB(255, 255, 255)})
+    local Smaller_Tween = TweenService:Create(Item, Debris_Service.Settings.Patlamali.Smaller_Tween_TweenInfo, {Size = Smaller_Size, Color = Color3.fromRGB(255, 255, 255)})
     Smaller_Tween:Play()
 
     Smaller_Tween.Completed:Wait()
 
-    local Patlamali_Tween = TweenService:Create(Item, Debris_Service.Settings.Patlamali.TweenInfo, {Size = Patlamali_Size, Transparency = 1})
+    local Patlamali_Tween = TweenService:Create(Item, Debris_Service.Settings.Patlamali.Patlamali_Tween_TweenInfo, {Size = Patlamali_Size, Transparency = 1})
     Patlamali_Tween:Play()
     
     Patlamali_Tween.Completed:Once(function()
@@ -351,5 +358,49 @@ function Debris_Service:Parcalara_Ayirma(Item :Instance)
     Item:Destroy()
 
 end
+
+
+function Debris_Service:Rotated(Item :Instance)
+
+    if not Item:IsA("BasePart") then
+        warn("Rotated debris type only works with BaseParts. It's "..Item.ClassName)
+        Item:Destroy()
+        return
+    end
+
+    task.spawn(function()
+
+        for _ = 1, 2 do
+            for _ = 1, 360 do
+                Item.CFrame = Item.CFrame * CFrame.Angles(0, math.rad(5), 0)
+                task.wait()
+            end
+        end
+
+    end)
+
+    task.wait(1.5)
+
+    local Raycast = workspace:Raycast(Item.Position, Vector3.new(0, -100, 0))
+    local Tween_Goal_Position
+
+    if Raycast then
+        Tween_Goal_Position = Item.Position - (Vector3.new(0, Raycast.Position.Y + Raycast.Instance.Size.Y, 0))
+    else
+        Tween_Goal_Position = Item.Position - Vector3.new(0, Debris_Service.Settings.Rotated.Defualt_Y_Axis_Drop, 0)
+    end
+
+    local Current_Tween_Info = Debris_Service.Settings.Rotated.TweenInfo
+    local Tween = TweenService:Create(Item, Current_Tween_Info, {Position = Tween_Goal_Position} )
+
+    Tween:Play()
+
+    Tween.Completed:Wait()
+    
+    Item:Destroy()
+end
+
+
+
 
 return Debris_Service
