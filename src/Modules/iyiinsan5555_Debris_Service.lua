@@ -10,10 +10,10 @@
     -Get_Smaller 👍
     -Get_Away_Randomly 👍
     -Delete_Directly 👍
-    -Rotated
+    -Rotated👍
     -Patlamali👍
-    -Parçalara_Ayirma 
-    -Aşaği_inme
+    -Parçalara_Ayirma 👍
+    -Aşaği_inme👍
     
 
 ]]
@@ -101,6 +101,18 @@ local function Create_Sorted_Table(Model :Model)  --Call this function always mo
 
 end
 
+local function Find_The_Top_Ancestor_Model(BasePart: BasePart)
+    local Last_Ancestor = BasePart:FindFirstAncestorWhichIsA("Model")
+
+    while Last_Ancestor and Last_Ancestor.Parent ~= workspace do
+        Last_Ancestor = Last_Ancestor:FindFirstAncestorWhichIsA("Model")
+    end
+
+    return Last_Ancestor
+end
+
+Find_The_Top_Ancestor_Model(workspace.ClassicHouse.House["Smooth Block Model"])
+
 
 function Debris_Service:Add_Item(Item :Instance, Lifetime :number, Debris_Type :string)
 
@@ -126,7 +138,7 @@ function Debris_Service:Add_Item(Item :Instance, Lifetime :number, Debris_Type :
 
     task.spawn(function()
         --Checking if it's a model
-        if Item:IsA("Model") then -- I don't suggest to use models that has big amount of parts. That can break game.
+        if Item:IsA("Model") then -- I don't suggest to use models that has big amount of parts. That can break game. // Fixed
 
             local Table = Create_Sorted_Table(Item)
 
@@ -160,17 +172,10 @@ function Debris_Service:Remove_Item(Item :Instance, Debris_Type :string )
 
     assert(typeof(Item) == "Instance", "Invalid argument #1 (Instance expected)")
 
-    --[[if not Debris_Service.Items[Item]  then
-        warn("CustomDebris: Item not found, cannot remove it")
-        return
-    end]]
-
     Debris_Service.Items[Item] = nil
     Debris_Service.Items_Lifetimes[Item] = nil
     Item_Count = Item_Count - 1
 
-    --Play custom thing (no need to task.delay())
-    --Use task.delay() in function
     Debris_Service[Debris_Type](Debris_Service,Item)
 
 end
@@ -283,7 +288,12 @@ end
 
 function Debris_Service:Patlamali(Item :Instance)
 
-    --Deleting textures
+    if not Item:IsA("BasePart") then
+        warn("Patlamali debris type only works with BaseParts. It's "..Item.ClassName)
+        Item:Destroy()
+        return
+    end
+
     for _, Thing in pairs(Item:GetDescendants()) do
        
         if Thing:IsA("Texture") or Thing:IsA("Decal") then
@@ -292,9 +302,7 @@ function Debris_Service:Patlamali(Item :Instance)
         
     end
 
-    --Changing material
     Item.Material = Enum.Material.Neon
-    --First tween (makes it smaller)
 
     local Smaller_Size = Vector3.new(Item.Size.X / 3, Item.Size.Y / 3, Item.Size.Z / 3)
     local Patlamali_Size = Vector3.new(Item.Size.X * 3, Item.Size.Y * 3, Item.Size.Z * 3)
@@ -319,40 +327,42 @@ function Debris_Service:Parcalara_Ayirma(Item :Instance)
     local Size_of_Item = Item.Size
     local Settings_Parcalara_Ayirma = Debris_Service.Settings.Parcalara_Ayirma
 
+    if not Item:IsA("BasePart") then
+        warn("Parcalara_Ayirma debris type only works with BaseParts. It's "..Item.ClassName)
+        Item:Destroy()
+        return
+    end
+
     if Size_of_Item.X < Settings_Parcalara_Ayirma.Min_Size_Item_X or Size_of_Item.Y < Settings_Parcalara_Ayirma.Min_Size_Item_Y or Size_of_Item.Z < Settings_Parcalara_Ayirma.Min_Size_Item_Z then
         warn("This item is not big enough to use this debris type")
         Item:Destroy()
         return
     end
 
-    -- Determine the number of pieces to create
-    local numPieces = math.random(2, 5)
+    local Number_Pieces = math.random(2, 5)
 
-    for i = 1, numPieces do
-        -- Create a new part
-        local newPart = Item:Clone()
-        newPart.Parent = workspace
+    for i = 1, Number_Pieces do
 
-        newPart.Name = Item.Name .. "_piece_" .. i
-        newPart.Anchored = false
+        local New_Part = Item:Clone()
+        New_Part.Parent = workspace
 
-        -- Set the size and position of the new part
-        newPart.Size = Vector3.new(
-            math.random(Settings_Parcalara_Ayirma.Min_Size_Item_X, Size_of_Item.X) / math.round((numPieces / 2)),
-            math.random(Settings_Parcalara_Ayirma.Min_Size_Item_Y, Size_of_Item.Y) / math.round((numPieces / 2)),
-            math.random(Settings_Parcalara_Ayirma.Min_Size_Item_Z, Size_of_Item.Z) / math.round((numPieces / 2))
+        New_Part.Name = Item.Name .. "_piece_" .. i
+        New_Part.Anchored = false
+
+        New_Part.Size = Vector3.new(
+            math.random(Settings_Parcalara_Ayirma.Min_Size_Item_X, Size_of_Item.X) / math.round((Number_Pieces / 2)),
+            math.random(Settings_Parcalara_Ayirma.Min_Size_Item_Y, Size_of_Item.Y) / math.round((Number_Pieces / 2)),
+            math.random(Settings_Parcalara_Ayirma.Min_Size_Item_Z, Size_of_Item.Z) / math.round((Number_Pieces / 2))
         )
-        newPart.Position = Item.Position
+        New_Part.Position = Item.Position
 
-        -- Apply a random force to the new part
-        newPart.Velocity = Vector3.new(math.random(-15, 15), math.random(10, 25), math.random(-15, 15))
 
-        --Adding instanec to Debris Service
-        self:Add_Item(newPart, numPieces, Debris_Service.Debris_Types.Delete_Directly)
+        New_Part.Velocity = Vector3.new(math.random(-15, 15), math.random(10, 25), math.random(-15, 15))
+
+        self:Add_Item(New_Part, Number_Pieces, Debris_Service.Debris_Types.Delete_Directly)
 
     end
 
-    -- Destroy the original item
     Item:Destroy()
 
 end
@@ -379,7 +389,16 @@ function Debris_Service:Rotated(Item :Instance)
 
     task.wait(1.5)
 
-    local Raycast = workspace:Raycast(Item.Position, Vector3.new(0, -100, 0))
+    local Raycast_Params = RaycastParams.new()
+    Raycast_Params.FilterType = Enum.RaycastFilterType.Exclude
+
+    local Top_Ancestor_Model = Find_The_Top_Ancestor_Model(Item)
+
+    if Top_Ancestor_Model then
+        Raycast_Params.FilterDescendantsInstances = {Top_Ancestor_Model}
+    end
+
+    local Raycast = workspace:Raycast(Item.Position, Vector3.new(0, -100, 0), Raycast_Params)
     local Tween_Goal_Position
 
     if Raycast then
