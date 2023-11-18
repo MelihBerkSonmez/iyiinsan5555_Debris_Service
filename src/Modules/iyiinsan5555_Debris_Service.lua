@@ -22,7 +22,6 @@
 
 --Services
 local TweenService = game:GetService("TweenService")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 --Definations
 local Debris_Service = {}
@@ -31,7 +30,6 @@ Debris_Service.Items = {}
 Debris_Service.Items_Lifetimes = {}
 
 local Item_Count = 0
-local Raycast_Visualizer = require(ReplicatedStorage:WaitForChild("Modules"):WaitForChild("iyiinsan5555's_RaycastVisualizer"))
 
 --Settings
 Debris_Service.Settings = {
